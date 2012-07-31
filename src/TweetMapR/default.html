@@ -1,0 +1,134 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>TweetMapR - SignalR + Twitter Streaming API + Google Map === This is looove...</title>
+    <link rel="stylesheet" type="text/css" href="/Content/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="/Content/bootstrap-responsive.min.css" />
+    <link rel="stylesheet" type="text/css" href="/Content/Style.css" />
+</head>
+<body>
+
+    <div class="navbar navbar-fixed-top">
+        <div class="navbar-inner">
+            <div class="container">
+                <a class="brand" href="/">TweetMapR</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="main" class="container">
+        
+        <div id="connection-control-panel" class="row">
+            <div class="span12">
+                <button id="startBtn" class="btn btn-small" type="button"><i class="icon-play"></i> Start</button>
+                <button id="stopBtn" class="btn btn-small" type="button"><i class="icon-stop"></i> Stop</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div id="map-holder" class="span8">
+                <div id="map_canvas"></div>
+            </div>
+            <div id="messages-holder" class="span4">
+                <ul id="messages"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="/Scripts/jquery-1.7.2.js"></script>
+    <script type="text/javascript" src="/Scripts/jquery.signalR-0.5.2.js"></script>
+    <script type="text/javascript" src="/SignalR/Hubs"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
+    <script>
+        //TODO: Seperate the js from HTML
+        //TODO: Seperate the concerns as well. Create events and trigger them when appropriate
+
+        $(function () {
+
+            var twitterHub = $.connection.twitterHub,
+                $startBtn = $("#startBtn"),
+                $stopBtn = $("#stopBtn"),
+                map;
+
+            function initialize() {
+
+                var mapOptions = {
+                    zoom: 2,
+                    center: new google.maps.LatLng(34.397, -10.644),
+                    mapTypeId: google.maps.MapTypeId.HYBRID
+                };
+                map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+            }
+
+            initialize();
+
+            twitterHub.broadcastTweet = function (tweet) {
+
+                $("#messages").prepend(
+                    $("<li>").html('<span style="color: green;">Tweet by <strong>@' + tweet.User + '</strong>:</span> ' + tweet.TweetText)
+                );
+
+                if (tweet.Longitude) {
+
+                    var marker = new google.maps.Marker({
+                        animation: google.maps.Animation.DROP,
+                        position: new google.maps.LatLng(tweet.Latitude, tweet.Longitude),
+                        title: tweet.TweetText + " by @" + tweet.User
+                    });
+
+                    var infowindow = new google.maps.InfoWindow({
+                        content: '<img style="height:40px;margin-right:10px;" src="' + tweet.ImageUrl + '" /><span style="color: green;">Tweet by <strong>@' + tweet.User + '</strong>:</span> ' + tweet.TweetText
+                    });
+
+                    marker.setMap(map);
+
+                    google.maps.event.addListener(marker, 'click', function () {
+                        infowindow.open(map, marker);
+                    });
+                }
+            }
+
+            function subscribeGlobalStream() {
+
+                twitterHub.subscribeToStreamGroup("Global").done(function (result) {
+
+                    //TODO: Display friendly notification messages about the status
+                    if (result === true) {
+
+                        $startBtn.prop("disabled", true);
+                        $stopBtn.prop("disabled", false);
+                    }
+                });
+            }
+
+            function unsubscribeGlobalStream() {
+
+                twitterHub.unsubscribeFromStreamGroup("Global").done(function () {
+
+                    //TODO: Display friendly notification messages about the status
+
+                    $stopBtn.prop("disabled", true);
+                    $startBtn.prop("disabled", false);
+                });
+            }
+
+            $.connection.hub.start().done(function () {
+
+                subscribeGlobalStream();
+
+                $stopBtn.click(function (e) {
+
+                    unsubscribeGlobalStream();
+                    e.preventDefault();
+                });
+
+                $startBtn.click(function (e) {
+
+                    subscribeGlobalStream();
+                    e.preventDefault();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

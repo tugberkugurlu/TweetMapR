@@ -1,0 +1,32 @@
+﻿html, body, #map_canvas {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+#messages {
+    padding:0;
+}
+#messages li {
+    padding: 10px;
+    margin: 0 0 5px 0;
+    list-style-type: none;
+    border: 1px solid #ccc;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+}
+#main {
+    margin-top:60px;
+}
+#map-holder {
+    
+}
+#map_canvas {
+    height:575px;
+    width: 90%;
+}
+#messages-holder {
+}
+#connection-control-panel {
+    margin-bottom: 15px;
+}
