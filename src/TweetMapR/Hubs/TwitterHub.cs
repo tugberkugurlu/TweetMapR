@@ -6,10 +6,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using SignalR.Hubs;
+using TweetMapR.Infrastructure;
 
 namespace TweetMapR.Hubs {
 
-    public class TwitterHub : Hub {
+    public class TwitterHub : ConnectionAwareHub {
 
         private static string[] _reservervedGroupNames = new[] { "Global" };
 

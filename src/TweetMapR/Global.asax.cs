@@ -17,7 +17,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SignalR;
 using TweetMapR.Hubs;
-using TweetMapR.Model;
 using TwitterDoodle.Data;
 using TwitterDoodle.Http;
 using TwitterDoodle.OAuth;
@@ -92,7 +91,7 @@ namespace TweetMapR {
                                 var userScreenName = tweetJToken["user"]["screen_name"].ToString();
                                 var imageUrl = tweetJToken["user"]["profile_image_url_https"].ToString();
 
-                                var tweet = new TweetMapR.Model.Tweet() { TweetText = tweetText, User = userScreenName, ImageUrl = imageUrl };
+                                var tweet = new TweetMapR.Entities.Model.Tweet() { TweetText = tweetText, User = userScreenName, ImageUrl = imageUrl };
 
                                 var coordinatesRoot = tweetJToken["coordinates"];
 
