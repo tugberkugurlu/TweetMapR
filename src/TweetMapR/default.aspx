@@ -25,6 +25,7 @@
             <div class="span12">
                 <button id="startBtn" class="btn btn-small" type="button"><i class="icon-play"></i> Start</button>
                 <button id="stopBtn" class="btn btn-small" type="button"><i class="icon-stop"></i> Stop</button>
+                <div class="pull-right"></div>
             </div>
         </div>
 

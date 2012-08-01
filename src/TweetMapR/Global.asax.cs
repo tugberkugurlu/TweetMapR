@@ -5,6 +5,8 @@ using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +18,7 @@ using Newtonsoft.Json.Linq;
 using SignalR;
 using TweetMapR.Hubs;
 using TweetMapR.Model;
+using TwitterDoodle.Data;
 using TwitterDoodle.Http;
 using TwitterDoodle.OAuth;
 
@@ -35,7 +38,8 @@ namespace TweetMapR {
             //TODO: No exception handling so far. Handle it better.
             //TODO: Don't block as much as possible and don't use Result
 
-            var uri = "https://stream.twitter.com/1/statuses/sample.json";
+            var sampleEndpointUri = "https://stream.twitter.com/1/statuses/sample.json";
+            var filterEndpointUri = "https://stream.twitter.com/1/statuses/filter.json";
             var consumerKey = ConfigurationManager.AppSettings["ConsumerKey"];
             var consumerSecret = ConfigurationManager.AppSettings["ConsumerSecret"];
             var token = ConfigurationManager.AppSettings["Token"];
@@ -50,18 +54,32 @@ namespace TweetMapR {
 
             var isCycleOn = true;
 
-            using (TwitterHttpClient client = new TwitterHttpClient(creds, signatureEntity)) {
+            TwitterQueryCollection collection = new TwitterQueryCollection();
+            //{southwest}long,lat,{northeast}long,lat
+            //The polygon which covers the whole world
+            collection.Add("locations", "-165.0,-75.0,165.0,75.0");
+
+            using (TwitterHttpClient client = new TwitterHttpClient(creds, signatureEntity, collection)) {
 
                 client.Timeout = TimeSpan.FromMilliseconds(-1);
-                var response = client.GetStreamAsync(uri).Result;
+                //var response = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead).Result;
+                //var contentResult = response.Content.ReadAsStreamAsync().Result;
 
-                using (var streamReader = new StreamReader(response, Encoding.UTF8)) {
+                var filterContent = new StringContent(collection.ToString());
+                filterContent.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
+                var filterRequest = new HttpRequestMessage(HttpMethod.Post, filterEndpointUri);
+                filterRequest.Content = filterContent;
 
+                var response = client.SendAsync(filterRequest, HttpCompletionOption.ResponseHeadersRead).Result;
+                var contentResult = response.Content.ReadAsStreamAsync().Result;
+
+                using (var streamReader = new StreamReader(contentResult, Encoding.UTF8)) {
+                    
                     var clients = GlobalHost.ConnectionManager.GetHubContext<TwitterHub>().Clients;
 
                     var cts = (CancellationTokenSource)State["cts"];
                     while (!streamReader.EndOfStream && !cts.IsCancellationRequested) {
-
+                        
                         var result = streamReader.ReadLine();
                         if (!string.IsNullOrEmpty(result)) {
 
@@ -74,7 +92,7 @@ namespace TweetMapR {
                                 var userScreenName = tweetJToken["user"]["screen_name"].ToString();
                                 var imageUrl = tweetJToken["user"]["profile_image_url_https"].ToString();
 
-                                var tweet = new Tweet() { TweetText = tweetText, User = userScreenName, ImageUrl = imageUrl };
+                                var tweet = new TweetMapR.Model.Tweet() { TweetText = tweetText, User = userScreenName, ImageUrl = imageUrl };
 
                                 var coordinatesRoot = tweetJToken["coordinates"];
 

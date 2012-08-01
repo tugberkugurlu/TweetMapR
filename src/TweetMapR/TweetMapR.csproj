@@ -132,6 +132,9 @@
     <Compile Include="..\Common\CommonAssemblyInfo.cs">
       <Link>Properties\CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="..\Common\TaskHelpers.cs">
+      <Link>Common\TaskHelpers.cs</Link>
+    </Compile>
     <Compile Include="Entities\IEntity.cs" />
     <Compile Include="Entities\User.cs" />
     <Compile Include="Global.asax.cs">
