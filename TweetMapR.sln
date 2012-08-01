@@ -10,12 +10,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{5B31D5
 		.nuget\nuget.exe = .nuget\nuget.exe
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TweetMapR.Pusher", "src\TweetMapR.Pusher\TweetMapR.Pusher.csproj", "{0C7AC29C-A84C-46E5-B6C9-8F1BBEC95498}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0C7AC29C-A84C-46E5-B6C9-8F1BBEC95498}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C7AC29C-A84C-46E5-B6C9-8F1BBEC95498}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C7AC29C-A84C-46E5-B6C9-8F1BBEC95498}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C7AC29C-A84C-46E5-B6C9-8F1BBEC95498}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9733911D-11C6-4F44-85A5-5CC15B070E26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9733911D-11C6-4F44-85A5-5CC15B070E26}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9733911D-11C6-4F44-85A5-5CC15B070E26}.Release|Any CPU.ActiveCfg = Release|Any CPU

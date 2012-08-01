@@ -115,6 +115,21 @@
                 });
             }
 
+            function buildInitialInfoWindowContent(tweet) {
+
+                var infoWindowContent = '<img style="height:40px;margin-right:10px;" src="' + tweet.ImageUrl + '" />'
+                infoWindowContent += '<span style="color: green;">Tweet by <strong>@';
+                infoWindowContent += tweet.User + '</strong>:</span> ' + tweet.TweetTextHtml;
+
+                return infoWindowContent;
+            }
+
+            function setInfoWindowContent(iw) {
+
+                //do the useful stuff here and alter the content
+                //iw.setContent(iw.content + "foo");
+            }
+
             initialize();
 
             calculateToastrPosition();
@@ -134,13 +149,25 @@
                     });
 
                     var infowindow = new google.maps.InfoWindow({
-                        content: '<img style="height:40px;margin-right:10px;" src="' + tweet.ImageUrl + '" /><span style="color: green;">Tweet by <strong>@' + tweet.User + '</strong>:</span> ' + tweet.TweetTextHtml
+                        content: buildInitialInfoWindowContent(tweet)
                     });
 
                     marker.setMap(map);
 
-                    google.maps.event.addListener(marker, 'click', function () {
+                    google.maps.event.addListener(marker, "click", function () {
+
+                        if (infowindow.isContentSet !== true) {
+
+                            infowindow.isContentSet = true;
+                            setInfoWindowContent(infowindow);
+                        }
+
                         infowindow.open(map, marker);
+                    });
+
+                    google.maps.event.addListener(infowindow, "domready", function () {
+
+                        var _infoWindow = this;
                     });
                 }
             }
