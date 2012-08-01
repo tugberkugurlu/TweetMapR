@@ -122,7 +122,7 @@
             twitterHub.broadcastTweet = function (tweet) {
 
                 $("#messages").prepend(
-                    $("<li>").html('<span style="color: green;">Tweet by <strong>@' + tweet.User + '</strong>:</span> ' + tweet.TweetText)
+                    $("<li>").html('<span style="color: green;">Tweet by <strong>@' + tweet.User + '</strong>:</span> ' + tweet.TweetTextHtml)
                 );
 
                 if (tweet.Longitude) {
@@ -134,7 +134,7 @@
                     });
 
                     var infowindow = new google.maps.InfoWindow({
-                        content: '<img style="height:40px;margin-right:10px;" src="' + tweet.ImageUrl + '" /><span style="color: green;">Tweet by <strong>@' + tweet.User + '</strong>:</span> ' + tweet.TweetText
+                        content: '<img style="height:40px;margin-right:10px;" src="' + tweet.ImageUrl + '" /><span style="color: green;">Tweet by <strong>@' + tweet.User + '</strong>:</span> ' + tweet.TweetTextHtml
                     });
 
                     marker.setMap(map);

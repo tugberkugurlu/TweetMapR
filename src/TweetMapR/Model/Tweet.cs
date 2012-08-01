@@ -14,5 +14,15 @@ namespace TweetMapR.Model {
         public string Location { get; set; }
         public string Longitude { get; set; }
         public string Latitude { get; set; }
+
+        public string TweetTextHtml {
+
+            get {
+
+                return (!string.IsNullOrEmpty(TweetText)) ?
+                    TweetText.ParseURL().ParseHashtag().ParseUsername() :
+                    TweetText;
+            }
+        }
     }
 }
