@@ -61,7 +61,7 @@ namespace TweetMapR {
 
             using (TwitterHttpClient client = new TwitterHttpClient(creds, signatureEntity, collection)) {
 
-                client.Timeout = TimeSpan.FromMilliseconds(-1);
+                client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
                 //var response = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead).Result;
                 //var contentResult = response.Content.ReadAsStreamAsync().Result;
 
