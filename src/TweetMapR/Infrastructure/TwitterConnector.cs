@@ -47,6 +47,10 @@ namespace TweetMapR.Infrastructure {
 
         public Task<HttpResponseMessage> GetLocationBasedConnection(string location) {
 
+            if (_httpClient != null) {
+                throw new NotSupportedException("Multiple connections with one instance of TwitterConnector is not allowed");
+            }
+
             TwitterQueryCollection collection = new TwitterQueryCollection();
             //{southwest}long,lat,{northeast}long,lat
             //The polygon which covers the whole world
