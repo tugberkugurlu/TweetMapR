@@ -20,6 +20,7 @@ using TweetMapR.Hubs;
 using TwitterDoodle.Data;
 using TwitterDoodle.Http;
 using TwitterDoodle.OAuth;
+using TweetMapR.Infrastructure;
 
 namespace TweetMapR {
 
@@ -37,39 +38,20 @@ namespace TweetMapR {
             //TODO: No exception handling so far. Handle it better.
             //TODO: Don't block as much as possible and don't use Result
 
-            var sampleEndpointUri = "https://stream.twitter.com/1/statuses/sample.json";
-            var filterEndpointUri = "https://stream.twitter.com/1/statuses/filter.json";
-            var consumerKey = ConfigurationManager.AppSettings["ConsumerKey"];
-            var consumerSecret = ConfigurationManager.AppSettings["ConsumerSecret"];
-            var token = ConfigurationManager.AppSettings["Token"];
-            var tokenSecret = ConfigurationManager.AppSettings["TokenSecret"];
             var globalStreamGroupName = "Global";
 
             CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
             State["cts"] = cancellationTokenSource;
 
-            OAuthCredential creds = new OAuthCredential(consumerKey) { Token = token };
-            OAuthSignatureEntity signatureEntity = new OAuthSignatureEntity(consumerSecret) { TokenSecret = tokenSecret };
-
             var isCycleOn = true;
 
-            TwitterQueryCollection collection = new TwitterQueryCollection();
-            //{southwest}long,lat,{northeast}long,lat
-            //The polygon which covers the whole world
-            collection.Add("locations", "-165.0,-75.0,165.0,75.0");
+            using (TwitterConnector twitterConnector = new TwitterConnector()) { 
 
-            using (TwitterHttpClient client = new TwitterHttpClient(creds, signatureEntity, collection)) {
-
-                client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
-                //var response = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead).Result;
-                //var contentResult = response.Content.ReadAsStreamAsync().Result;
-
-                var filterContent = new StringContent(collection.ToString());
-                filterContent.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
-                var filterRequest = new HttpRequestMessage(HttpMethod.Post, filterEndpointUri);
-                filterRequest.Content = filterContent;
-
-                var response = client.SendAsync(filterRequest, HttpCompletionOption.ResponseHeadersRead).Result;
+                //TODO: Response message might be other than 200
+                //      if this is the case, the other parts of the code might not work
+                //      as excpected. Handle this.
+                //var response = twitterConnector.GetLocationBasedConnection("-165.0,-75.0,165.0,75.0").Result;
+                var response = twitterConnector.GetSampleFirehoseConnection().Result;
                 var contentResult = response.Content.ReadAsStreamAsync().Result;
 
                 using (var streamReader = new StreamReader(contentResult, Encoding.UTF8)) {
@@ -82,6 +64,7 @@ namespace TweetMapR {
                         var result = streamReader.ReadLine();
                         if (!string.IsNullOrEmpty(result)) {
 
+                            //TODO: Handle the exceptions here.
                             var tweetJToken = JsonConvert.DeserializeObject<dynamic>(result);
                             var tweetObj = tweetJToken["text"];
 
