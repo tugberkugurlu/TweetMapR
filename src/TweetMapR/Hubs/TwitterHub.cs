@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using Microsoft.AspNet.SignalR;
+using System;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Web;
-using SignalR.Hubs;
-using TweetMapR.Infrastructure;
 
 namespace TweetMapR.Hubs {
 
-    public class TwitterHub : ConnectionAwareHub {
+    public class TwitterHub : Hub {
 
         private static string[] _reservervedGroupNames = new[] { "Global" };
 

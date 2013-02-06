@@ -1,25 +1,13 @@
-﻿using System;
+﻿using Microsoft.AspNet.SignalR;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Security;
-using System.Web.SessionState;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using SignalR;
+using System.Web.Routing;
 using TweetMapR.Hubs;
-using TwitterDoodle.Data;
-using TwitterDoodle.Http;
-using TwitterDoodle.OAuth;
 using TweetMapR.Infrastructure;
 
 namespace TweetMapR {
@@ -30,6 +18,7 @@ namespace TweetMapR {
 
         protected void Application_Start(object sender, EventArgs e) {
 
+            RouteTable.Routes.MapHubs();
             Task.Factory.StartNew(() => FireUpTheWork());
         }
 
@@ -86,7 +75,7 @@ namespace TweetMapR {
                                 }
 
                                 //broadcast tweet to global stream subscribers
-                                clients[globalStreamGroupName].broadcastTweet(tweet);
+                                clients.Group(globalStreamGroupName).broadcastTweet(tweet);
                             }
                         }
                     }

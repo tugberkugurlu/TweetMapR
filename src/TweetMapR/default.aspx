@@ -51,11 +51,11 @@
         </div>
     </div>
 
-    <script type="text/javascript" src="/Scripts/jquery-1.7.2.js"></script>
-    <script type="text/javascript" src="/Scripts/jquery.signalR-0.5.2.js"></script>
-    <script type="text/javascript" src="/SignalR/Hubs"></script>
-    <script type="text/javascript" src="/Scripts/knockout-2.1.0.js"></script>
-    <script type="text/javascript" src="/Scripts/toastr.js"></script>
+    <script src="/Scripts/jquery-1.7.2.js"></script>
+    <script src="/Scripts/jquery.signalR-1.0.0-rc2.js"></script>
+    <script src="/SignalR/Hubs"></script>
+    <script src="/Scripts/knockout-2.1.0.js"></script>
+    <script src="/Scripts/toastr.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?sensor=false"></script>
     <script>
         //TODO: Seperate the js from HTML
@@ -93,7 +93,7 @@
 
             function subscribeGlobalStream() {
 
-                twitterHub.subscribeToStreamGroup("Global").done(function (result) {
+                twitterHub.server.subscribeToStreamGroup("Global").done(function (result) {
 
                     toastr.success("Successfully subscribed to Global Twitter stream.");
                     if (result === true) {
@@ -106,9 +106,8 @@
 
             function unsubscribeGlobalStream() {
 
-                twitterHub.unsubscribeFromStreamGroup("Global").done(function () {
+                twitterHub.server.unsubscribeFromStreamGroup("Global").done(function () {
 
-                    //TODO: Display friendly notification messages about the status
                     toastr.success("Successfully unsubscribed from Global Twitter stream.");
                     $stopBtn.prop("disabled", true);
                     $startBtn.prop("disabled", false);
@@ -134,7 +133,7 @@
 
             calculateToastrPosition();
 
-            twitterHub.broadcastTweet = function (tweet) {
+            twitterHub.client.broadcastTweet = function (tweet) {
 
                 $("#messages").prepend(
                     $("<li>").html('<span style="color: green;">Tweet by <strong>@' + tweet.User + '</strong>:</span> ' + tweet.TweetTextHtml)
