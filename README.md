@@ -16,3 +16,7 @@ Then, set your Twitter API Keys inside the *Web.config* file you just copied:
 	<add key="TokenSecret" value="" />
 
 Finally, run the **TweetMapR** project. You are good to go!
+
+# Running the Windows 8 Client
+
+To run the Windows 8 client, you need to add your own Bing Maps Key to MainPage.xaml file. To get a Bing Maps Key, refer here: [Getting a Bing Maps Key](http://msdn.microsoft.com/en-us/library/ff428642.aspx).
