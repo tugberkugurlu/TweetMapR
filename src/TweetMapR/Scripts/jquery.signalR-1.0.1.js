@@ -1,7 +1,7 @@
 /* jquery.signalR.core.js */
 /*global window:false */
 /*!
- * ASP.NET SignalR JavaScript Library v1.0.0
+ * ASP.NET SignalR JavaScript Library v1.0.1
  * http://signalr.net/
  *
  * Copyright Microsoft Open Technologies, Inc. All rights reserved.
@@ -86,7 +86,11 @@
 
                 connection.reconnecting(function () {
                     var connection = this;
-                    stopReconnectingTimeout = window.setTimeout(function () { onReconnectTimeout(connection); }, connection.disconnectTimeout);
+
+                    // Guard against state changing in a previous user defined even handler
+                    if (connection.state === signalR.connectionState.reconnecting) {
+                        stopReconnectingTimeout = window.setTimeout(function () { onReconnectTimeout(connection); }, connection.disconnectTimeout);
+                    }
                 });
 
                 connection.stateChanged(function (data) {
@@ -225,15 +229,11 @@
 
         state: signalR.connectionState.disconnected,
 
-        groups: {},
-
         keepAliveData: {},
 
         reconnectDelay: 2000,
 
-        disconnectTimeout: 40000, // This should be set by the server in response to the negotiate request (40s default)
-
-        keepAliveTimeoutCount: 3,
+        disconnectTimeout: 30000, // This should be set by the server in response to the negotiate request (30s default)
 
         keepAliveWarnAt: 2 / 3, // Warn user of slow connection if we breach the X% mark of the keep alive timeout
 
@@ -387,6 +387,9 @@
             };
 
             var url = connection.url + "/negotiate";
+
+            url = signalR.transports._logic.addQs(url, connection);
+
             connection.log("Negotiating with '" + url + "'.");
             $.ajax({
                 url: url,
@@ -406,6 +409,7 @@
 
                     connection.appRelativeUrl = res.Url;
                     connection.id = res.ConnectionId;
+                    connection.token = res.ConnectionToken;
                     connection.webSocketServerUrl = res.WebSocketServerUrl;
 
                     // Once the server has labeled the PersistentConnection as Disconnected, we should stop attempting to reconnect
@@ -414,15 +418,12 @@
                     
 
                     // If we have a keep alive
-                    if (res.KeepAlive) {
-                        // Convert to milliseconds
-                        res.KeepAlive *= 1000;
-
+                    if (res.KeepAliveTimeout) {
                         // Register the keep alive data as activated
                         keepAliveData.activated = true;
 
-                        // Timeout to designate when to force the connection into reconnecting
-                        keepAliveData.timeout = res.KeepAlive * connection.keepAliveTimeoutCount;
+                        // Timeout to designate when to force the connection into reconnecting converted to milliseconds
+                        keepAliveData.timeout = res.KeepAliveTimeout * 1000;
 
                         // Timeout to designate when to warn the developer that the connection may be dead or is hanging.
                         keepAliveData.timeoutWarning = keepAliveData.timeout * connection.keepAliveWarnAt;
@@ -434,9 +435,9 @@
                         keepAliveData.activated = false;
                     }
 
-                    if (!res.ProtocolVersion || res.ProtocolVersion !== "1.1") {
-                        $(connection).triggerHandler(events.onError, "SignalR: Incompatible protocol version.");
-                        deferred.reject("SignalR: Incompatible protocol version.");
+                    if (!res.ProtocolVersion || res.ProtocolVersion !== "1.2") {
+                        $(connection).triggerHandler(events.onError, "You are using a version of the client that isn't compatible with the server. Client version 1.2, server version " + res.ProtocolVersion + ".");
+                        deferred.reject("You are using a version of the client that isn't compatible with the server. Client version 1.2, server version " + res.ProtocolVersion + ".");
                         return;
                     }
 
@@ -614,7 +615,7 @@
                 $(connection).triggerHandler(events.onDisconnect);
 
                 delete connection.messageId;
-                delete connection.groups;
+                delete connection.groupsToken;
 
                 // Remove the ID and the deferral on stop, this is to ensure that if a connection is restarted it takes on a new id/deferral.
                 delete connection.id;
@@ -716,6 +717,8 @@
                 url = baseUrl + connection.appRelativeUrl + "/ping",
                 deferral = $.Deferred();
 
+            url = this.addQs(url, connection);
+
             $.ajax({
                 url: url,
                 global: false,
@@ -740,30 +743,42 @@
         },
 
         addQs: function (url, connection) {
+            var appender = url.indexOf("?") !== -1 ? "&" : "?",
+                firstChar;
+            
             if (!connection.qs) {
                 return url;
             }
 
             if (typeof (connection.qs) === "object") {
-                return url + "&" + $.param(connection.qs);
+                return url + appender + $.param(connection.qs);
             }
 
             if (typeof (connection.qs) === "string") {
-                return url + "&" + connection.qs;
+                firstChar = connection.qs.charAt(0);
+
+                if (firstChar === "?" || firstChar === "&") {
+                    appender = "";
+                }
+
+                return url + appender + connection.qs;
             }
 
-            return url + "&" + window.encodeURIComponent(connection.qs.toString());
+            throw new Error("Connections query string property must be either a string or object.");
         },
 
         getUrl: function (connection, transport, reconnecting, appendReconnectUrl) {
             /// <summary>Gets the url for making a GET based connect request</summary>
             var baseUrl = transport === "webSockets" ? "" : connection.baseUrl,
                 url = baseUrl + connection.appRelativeUrl,
-                qs = "transport=" + transport + "&connectionId=" + window.encodeURIComponent(connection.id),
-                groups = this.getGroups(connection);
+                qs = "transport=" + transport + "&connectionToken=" + window.encodeURIComponent(connection.token);
 
             if (connection.data) {
                 qs += "&connectionData=" + window.encodeURIComponent(connection.data);
+            }
+
+            if (connection.groupsToken) {
+                qs += "&groupsToken=" + window.encodeURIComponent(connection.groupsToken);
             }
 
             if (!reconnecting) {
@@ -774,9 +789,6 @@
                 }
                 if (connection.messageId) {
                     qs += "&messageId=" + window.encodeURIComponent(connection.messageId);
-                }
-                if (groups.length !== 0) {
-                    qs += "&groups=" + window.encodeURIComponent(JSON.stringify(groups));
                 }
             }
             url += "?" + qs;
@@ -792,49 +804,18 @@
                 Disconnect: typeof (minPersistentResponse.D) !== "undefined" ? true : false,
                 TimedOut: typeof (minPersistentResponse.T) !== "undefined" ? true : false,
                 LongPollDelay: minPersistentResponse.L,
-                ResetGroups: minPersistentResponse.R,
-                AddedGroups: minPersistentResponse.G,
-                RemovedGroups: minPersistentResponse.g
+                GroupsToken: minPersistentResponse.G
             };
         },
 
-        updateGroups: function (connection, resetGroups, addedGroups, removedGroups) {
-            // Use the keys in connection.groups object as a set of groups.
-            // Prefix all group names with # so we don't conflict with the object's prototype or __proto__.
-            function addGroups(groups) {
-                $.each(groups, function (_, group) {
-                    connection.groups['#' + group] = true;
-                });
+        updateGroups: function (connection, groupsToken) {
+            if (groupsToken) {
+                connection.groupsToken = groupsToken;
             }
-
-            if (resetGroups) {
-                connection.groups = {};
-                addGroups(resetGroups);
-            } else {
-                if (addedGroups) {
-                    addGroups(addedGroups);
-                }
-                if (removedGroups) {
-                    $.each(removedGroups, function (_, group) {
-                        delete connection.groups['# ' + group];
-                    });
-                }
-            }
-        },
-
-        getGroups: function (connection) {
-            var groups = [];
-            if (connection.groups) {
-                $.each(connection.groups, function (group, _) {
-                    // Add keys from connection.groups without the # prefix
-                    groups.push(group.substr(1));
-                });
-            }
-            return groups;
         },
 
         ajaxSend: function (connection, data) {
-            var url = connection.url + "/send" + "?transport=" + connection.transport.name + "&connectionId=" + window.encodeURIComponent(connection.id);
+            var url = connection.url + "/send" + "?transport=" + connection.transport.name + "&connectionToken=" + window.encodeURIComponent(connection.token);
             url = this.addQs(url, connection);
             return $.ajax({
                 url: url,
@@ -850,8 +831,7 @@
                     }
                 },
                 error: function (errData, textStatus) {
-                    if (textStatus === "abort" ||
-                        (textStatus === "parsererror" && connection.ajaxDataType === "jsonp")) {
+                    if (textStatus === "abort" || textStatus === "parsererror") {
                         // The parsererror happens for sends that don't return any data, and hence
                         // don't write the jsonp callback to the response. This is harder to fix on the server
                         // so just hack around it on the client for now.
@@ -870,7 +850,7 @@
             // Async by default unless explicitly overidden
             async = typeof async === "undefined" ? true : async;
 
-            var url = connection.url + "/abort" + "?transport=" + connection.transport.name + "&connectionId=" + window.encodeURIComponent(connection.id);
+            var url = connection.url + "/abort" + "?transport=" + connection.transport.name + "&connectionToken=" + window.encodeURIComponent(connection.token);
             url = this.addQs(url, connection);
             $.ajax({
                 url: url,
@@ -911,17 +891,11 @@
                     return;
                 }
 
-                this.updateGroups(connection, data.ResetGroups, data.AddedGroups, data.RemovedGroups);
+                this.updateGroups(connection, data.GroupsToken);
 
                 if (data.Messages) {
                     $.each(data.Messages, function () {
-                        try {
-                            $connection.triggerHandler(events.onReceived, [this]);
-                        }
-                        catch (e) {
-                            connection.log("Error raising received " + e);
-                            $(connection).triggerHandler(events.onError, [e]);
-                        }
+                        $connection.triggerHandler(events.onReceived, [this]);
                     });
                 }
 
@@ -971,7 +945,7 @@
                 $(connection).unbind(events.onReconnect, connection.keepAliveData.reconnectKeepAliveUpdate);
 
                 // Clear all the keep alive data
-                keepAliveData = {};
+                connection.keepAliveData = {};
                 connection.log("Stopping the monitoring of the keep alive");
             }
         },
@@ -1334,6 +1308,7 @@
         stop: function (connection) {
             if (connection && connection.eventSource) {
                 connection.log("EventSource calling close()");
+                connection.eventSource.ID = null;
                 connection.eventSource.close();
                 connection.eventSource = null;
                 delete connection.eventSource;
@@ -2028,5 +2003,5 @@
 /*global window:false */
 /// <reference path="jquery.signalR.core.js" />
 (function ($) {
-    $.signalR.version = "1.0.0.rc1";
+    $.signalR.version = "1.0.1";
 }(window.jQuery));

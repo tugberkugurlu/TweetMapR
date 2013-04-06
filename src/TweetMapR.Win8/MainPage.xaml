@@ -1,0 +1,15 @@
+﻿<Page
+    x:Class="TweetMapR.Win8.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:TweetMapR.Win8"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Maps="using:Bing.Maps"
+    mc:Ignorable="d">
+
+    <Grid Background="{StaticResource ApplicationPageBackgroundThemeBrush}">
+        <Maps:Map Credentials="Bing_Maps_Key_Here" x:Name="BingMap">
+        </Maps:Map>
+    </Grid>
+</Page>

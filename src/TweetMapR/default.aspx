@@ -52,7 +52,7 @@
     </div>
 
     <script src="/Scripts/jquery-1.7.2.js"></script>
-    <script src="/Scripts/jquery.signalR-1.0.0-rc2.js"></script>
+    <script src="Scripts/jquery.signalR-1.0.1.min.js"></script>
     <script src="/SignalR/Hubs"></script>
     <script src="/Scripts/knockout-2.1.0.js"></script>
     <script src="/Scripts/toastr.js"></script>

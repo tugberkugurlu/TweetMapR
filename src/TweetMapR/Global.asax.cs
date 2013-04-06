@@ -39,8 +39,8 @@ namespace TweetMapR {
                 //TODO: Response message might be other than 200
                 //      if this is the case, the other parts of the code might not work
                 //      as excpected. Handle this.
-                //var response = twitterConnector.GetLocationBasedConnection("-165.0,-75.0,165.0,75.0").Result;
-                var response = twitterConnector.GetSampleFirehoseConnection().Result;
+                var response = twitterConnector.GetLocationBasedConnection("-165.0,-75.0,165.0,75.0").Result;
+                //var response = twitterConnector.GetSampleFirehoseConnection().Result;
                 var contentResult = response.Content.ReadAsStreamAsync().Result;
 
                 using (var streamReader = new StreamReader(contentResult, Encoding.UTF8)) {
